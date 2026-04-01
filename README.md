@@ -26,7 +26,7 @@ Add `itu_r_propagation` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:itu_r_propagation, "~> 0.1.0"}
+    {:itu_r_propagation, "~> 0.6.0"}
   ]
 end
 ```
