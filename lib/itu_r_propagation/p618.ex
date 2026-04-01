@@ -179,6 +179,109 @@ defmodule ItuRPropagation.P618 do
     end
   end
 
+  @doc """
+  Compute tropospheric scintillation attenuation.
+
+  Implements the step-by-step method from ITU-R P.618-13, Section 2.4.
+  Calculates the scintillation fade depth exceeded for a given time percentage.
+
+  ## Parameters
+
+    * `frequency_ghz` - Frequency in GHz (up to 20 GHz for the model validity,
+      but often used higher)
+    * `elevation_deg` - Elevation angle in degrees (> 5.0)
+    * `p` - Time percentage (0.01 to 50)
+    * `opts` - Options:
+      - `:antenna_diameter_m` - Antenna diameter in meters (default: 1.2)
+      - `:antenna_efficiency` - Antenna efficiency (default: 0.5)
+      - `:temperature_c` - Average surface temperature in degrees Celsius (default: 15.0)
+      - `:relative_humidity` - Average relative humidity in % (default: 75.0)
+      - `:n_wet` - Wet term of surface refractivity (if known)
+
+  ## Returns
+
+  Scintillation fade depth in dB.
+  """
+  @spec scintillation_attenuation(float(), float(), float(), keyword()) :: float()
+  def scintillation_attenuation(frequency_ghz, elevation_deg, p, opts \\ []) do
+    if elevation_deg < 5.0 do
+      # Model validity is for elevation >= 5 degrees
+      # For very low elevation, return 0 or a very simplified value
+      0.0
+    else
+      f = frequency_ghz
+      theta = elevation_deg
+      theta_rad = theta * :math.pi() / 180.0
+      d = Keyword.get(opts, :antenna_diameter_m, 1.2)
+      eta = Keyword.get(opts, :antenna_efficiency, 0.5)
+
+      # Step 1-2: Wet term of surface refractivity N_wet
+      n_wet =
+        case Keyword.get(opts, :n_wet) do
+          nil ->
+            t_c = Keyword.get(opts, :temperature_c, 15.0)
+            h = Keyword.get(opts, :relative_humidity, 75.0)
+            calculate_n_wet(t_c, h)
+
+          val ->
+            val
+        end
+
+      # Step 3: Standard deviation of signal amplitude sigma_ref
+      sigma_ref = 3.6e-3 + 1.0e-4 * n_wet
+
+      # Step 4: Effective antenna diameter d_eff
+      d_eff = :math.sqrt(eta) * d
+
+      # Step 5: Antenna gain factor g(x)
+      # L = slant path length to height h = 1000m
+      h = 1000.0
+      # Earth radius in meters
+      re = 6371.0 * 1000.0
+      sin_theta = :math.sin(theta_rad)
+      l = 2.0 * h / (:math.sqrt(sin_theta * sin_theta + 2.0 * h / re) + sin_theta)
+
+      # x = 1.22 * d_eff^2 * f / L  where f is in GHz, d_eff and L in meters
+      x = 1.22 * d_eff * d_eff * f / l
+
+      gx =
+        if x < 7.0 do
+          term1 =
+            3.86 * :math.pow(x * x + 1.0, 11.0 / 12.0) *
+              :math.sin(11.0 / 6.0 * :math.atan(1.0 / x))
+
+          term2 = 7.08 * :math.pow(x, 5.0 / 6.0)
+          :math.sqrt(max(term1 - term2, 0.0))
+        else
+          0.0
+        end
+
+      # Step 6: Standard deviation of signal amplitude sigma
+      sigma = sigma_ref * :math.pow(f, 7.0 / 12.0) / :math.pow(:math.sin(theta_rad), 1.2) * gx
+
+      # Step 7: Time percentage factor a(p)
+      ap =
+        -0.061 * :math.pow(:math.log10(p), 3) + 0.072 * :math.pow(:math.log10(p), 2) -
+          1.71 * :math.log10(p) + 3.0
+
+      # Step 8: Scintillation fade depth A_s(p)
+      ap * sigma
+    end
+  end
+
+  # Calculate N_wet from temperature and relative humidity
+  # Based on ITU-R P.453
+  defp calculate_n_wet(t_c, h) do
+    t_k = t_c + 273.15
+    # Saturation water vapor pressure e_s (hPa)
+    # Magnus formula
+    es = 6.1121 * :math.exp(17.67 * t_c / (t_c + 243.5))
+    # Water vapor pressure e (hPa)
+    e = h * es / 100.0
+    # N_wet = 3.732 * 10^5 * e / T^2
+    3.732e5 * e / (t_k * t_k)
+  end
+
   # Scale the 0.01% attenuation to other time percentages
   # Using the method from P.618-13, Step 10
   @spec scale_attenuation(float(), float(), float(), float()) :: float()

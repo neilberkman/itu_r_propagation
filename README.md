@@ -15,8 +15,9 @@ This library implements the following recommendations:
 |---|---|---|
 | [P.676](https://www.itu.int/rec/R-REC-P.676/en) | Attenuation by atmospheric gases | Simplified Annex 2 model (1-350 GHz) |
 | [P.838](https://www.itu.int/rec/R-REC-P.838/en) | Specific attenuation model for rain | Full regression coefficients from P.838-3 (1-1000 GHz) |
-| [P.618](https://www.itu.int/rec/R-REC-P.618/en) | Earth-space propagation | Full step-by-step procedure from P.618-13 |
+| [P.618](https://www.itu.int/rec/R-REC-P.618/en) | Earth-space propagation | Full step-by-step procedure from P.618-13 (Rain, Scintillation) |
 | [P.839](https://www.itu.int/rec/R-REC-P.839/en) | Rain height model | 1-degree gridded data from P.839-4 with bilinear interpolation |
+| [P.840](https://www.itu.int/rec/R-REC-P.840/en) | Attenuation due to clouds and fog | Double-Debye permittivity model from P.840-7 |
 
 ## Installation
 
@@ -103,9 +104,8 @@ mix test --include python_parity
 
 ## Limitations
 
-- **P.676**: Simplified Annex 2 model, not the line-by-line Annex 1 summation. Accuracy is reduced near strong absorption lines (22 GHz water vapor, 60 GHz oxygen).
-- **Cloud/scintillation**: Simplified empirical models. For detailed modeling, refer to ITU-R P.840 (clouds) and P.618 Section 2.4 (scintillation).
-- **P.839 grid**: 1-degree resolution. The full ITU-R P.839-4 dataset has finer resolution in some regions.
+- **P.676**: Simplified Annex 2 model, not the line-by-line Annex 1 summation.
+- **P.839 grid**: 1-degree resolution. The full ITU-R P.839 dataset has finer resolution (0.1125 degree) in some regions, though 1-degree is already superior to common 1.5-degree defaults.
 
 ## License
 

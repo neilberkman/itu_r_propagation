@@ -174,24 +174,24 @@ defmodule ItuRPropagation.LinkBudgetTest do
     end
   end
 
-  describe "scintillation_attenuation/2" do
+  describe "scintillation_attenuation/3" do
     test "increases with frequency" do
-      s_5 = LinkBudget.scintillation_attenuation(5.0, 30.0)
-      s_20 = LinkBudget.scintillation_attenuation(20.0, 30.0)
+      s_5 = LinkBudget.scintillation_attenuation(5.0, 30.0, 0.01)
+      s_20 = LinkBudget.scintillation_attenuation(20.0, 30.0, 0.01)
       assert s_20 > s_5
     end
 
     test "increases at lower elevation" do
-      s_60 = LinkBudget.scintillation_attenuation(12.0, 60.0)
-      s_30 = LinkBudget.scintillation_attenuation(12.0, 30.0)
-      s_10 = LinkBudget.scintillation_attenuation(12.0, 10.0)
+      s_60 = LinkBudget.scintillation_attenuation(12.0, 60.0, 0.01)
+      s_30 = LinkBudget.scintillation_attenuation(12.0, 30.0, 0.01)
+      s_10 = LinkBudget.scintillation_attenuation(12.0, 10.0, 0.01)
 
       assert s_30 > s_60
       assert s_10 > s_30
     end
 
     test "is zero for non-positive elevation" do
-      assert LinkBudget.scintillation_attenuation(12.0, 0.0) == 0.0
+      assert LinkBudget.scintillation_attenuation(12.0, 0.0, 0.01) == 0.0
     end
   end
 
